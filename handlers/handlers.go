@@ -8,6 +8,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/eldeal/observation-controller/config"
 	"github.com/eldeal/observation-controller/mapper"
+	"github.com/eldeal/observation-controller/observations"
 	"github.com/gorilla/mux"
 )
 
@@ -28,7 +29,7 @@ func setStatusCode(req *http.Request, w http.ResponseWriter, err error) {
 	w.WriteHeader(status)
 }
 
-// Bulletin handles bulletin requests
+// Observations handles observation requests
 func Observations(cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -39,21 +40,32 @@ func Observations(cfg config.Config) http.HandlerFunc {
 
 		//validate dataset details and get metadata
 		//TODO: move client init to service pkg
-		cli := dataset.NewAPIClient("https://api.beta.ons.gov.uk/v1")
-		v, err := cli.GetVersion(ctx, "", "", "", "", datasetID, edition, version)
+		dsCli := dataset.NewAPIClient(cfg.APIURL)
+		v, err := dsCli.GetVersion(ctx, "", "", "", "", datasetID, edition, version)
 		if err != nil {
 			log.Error(ctx, "failed to get version details", err)
 			setStatusCode(r, w, err)
 			return
 		}
+
 		//request observations (URL params to start, via a form later on)
+		obsCli := observations.NewAPIClient(cfg.APIURL)
+		obsDoc, err := obsCli.Get(ctx, datasetID, edition, version, r.URL.Query())
+		if err != nil {
+			log.Error(ctx, "failed to get version details", err)
+			setStatusCode(r, w, err)
+			return
+		}
 
 		//format response
-
 		obs := mapper.Observation{
 			Name: r.URL.EscapedPath(),
 		}
 		model := mapper.WithVersion(ctx, obs, v, cfg)
+		if err := model.ParseObservationDetails(ctx, obsDoc); err != nil {
+			setStatusCode(r, w, err)
+			return
+		}
 
 		b, err := json.Marshal(model)
 		if err != nil {

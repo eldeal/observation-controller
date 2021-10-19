@@ -14,6 +14,7 @@ require (
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.41.1 // indirect
+	github.com/ONSdigital/dp-observation-api v0.9.0
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519 // indirect
