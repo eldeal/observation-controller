@@ -30,10 +30,6 @@ func setStatusCode(req *http.Request, w http.ResponseWriter, err error) {
 func Observations(cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		//vars := mux.Vars(r)
-		// datasetID := vars["dataset_id"]
-		// edition := vars["edition"]
-		// version := vars["version"]
 
 		obs := mapper.Observation{Name: r.URL.EscapedPath()}
 		model := mapper.Blank(ctx, obs, cfg)
@@ -44,8 +40,7 @@ func Observations(cfg config.Config) http.HandlerFunc {
 			return
 		}
 
-		_, err = w.Write(b)
-		if err != nil {
+		if _, err = w.Write(b); err != nil {
 			log.Error(ctx, "failed to write bytes for http response", err)
 			setStatusCode(r, w, err)
 			return
